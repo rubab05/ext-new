@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            width: 320px;
+            padding: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 13px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 { font-size: 15px; color: #fff; text-align: center; }
+        .subtitle { font-size: 10px; color: #888; text-align: center; margin-bottom: 10px; }
+
+        .context {
+            background: #2d2d44;
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+        }
+        .ctx-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+        .ctx-row:last-child { margin-bottom: 0; }
+        .ctx-label { font-size: 11px; color: #888; }
+        .ctx-value { font-size: 12px; font-weight: 600; color: #cbd5e1; }
+        .ctx-value.good { color: #4ade80; }
+        .ctx-value.muted { color: #64748b; }
+
+        .status {
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .status.idle { background: #2d2d44; color: #aaa; }
+        .status.running { background: #1e3a1e; color: #4ade80; }
+        .status.paused { background: #3a3a1e; color: #fbbf24; }
+        .status.done { background: #1e2a3a; color: #60a5fa; }
+        .status.error { background: #3a1e1e; color: #f87171; }
+
+        .next { font-size: 11px; color: #94a3b8; text-align: center; margin-bottom: 8px; min-height: 14px; }
+
+        .message {
+            padding: 6px 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 11px;
+            display: none;
+        }
+        .message.visible { display: block; }
+        .message.warn { background: #3a2020; color: #fca5a5; border-left: 3px solid #ef4444; }
+        .message.ok { background: #1e3a1e; color: #86efac; border-left: 3px solid #4ade80; }
+
+        .btn-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #fff;
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-start { background: #22c55e; }
+        .btn-stop { background: #ef4444; }
+        .btn-pause { background: #f59e0b; }
+        .btn-reset { background: #3b3b5c; font-size: 11px; padding: 6px; }
+
+        .section { background: #2d2d44; padding: 10px; border-radius: 6px; margin-bottom: 10px; }
+        .section h3 {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .speed-modes { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+        .speed-btn { padding: 6px 2px; font-size: 11px; background: #3b3b5c; border-radius: 4px; }
+        .speed-btn.active { background: #3b82f6; }
+        .speed-btn.safe.active { background: #10b981; }
+        .speed-btn.fast.active { background: #f59e0b; }
+        .speed-btn.ultra.active { background: #ef4444; }
+        .speed-btn.custom.active { background: #8b5cf6; }
+        .change-modes { grid-template-columns: 1fr 1fr; }
+        .custom-refresh { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: #aaa; }
+        .custom-refresh .input { width: 64px; }
+        .hint.warn { color: #fca5a5; }
+        #cooldownHint { margin: -4px 0 10px; }
+
+        .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 6px; }
+        .field label { font-size: 10px; color: #888; text-transform: uppercase; }
+        #manageCentresField[hidden] { display: none; }
+        .input {
+            background: #1a1a2e;
+            border: 1px solid #3b3b5c;
+            border-radius: 4px;
+            color: #eee;
+            padding: 5px 6px;
+            font-size: 11px;
+            font-family: inherit;
+            width: 100%;
+        }
+        .input:focus { outline: none; border-color: #3b82f6; }
+        .input::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8px; }
+        .grid-2.disabled { opacity: 0.55; }
+        .hint { font-size: 10px; color: #888; text-align: center; margin-top: 4px; }
+
+        .toggle-label { position: relative; display: inline-block; width: 28px; height: 16px; cursor: pointer; }
+        .toggle-input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider { position: absolute; inset: 0; background: #3b3b5c; border-radius: 16px; transition: 0.2s; }
+        .toggle-slider::before {
+            content: ''; position: absolute; width: 12px; height: 12px;
+            left: 2px; bottom: 2px; background: #888; border-radius: 50%; transition: 0.2s;
+        }
+        .toggle-input:checked + .toggle-slider { background: #3b82f6; }
+        .toggle-input:checked + .toggle-slider::before { transform: translateX(12px); background: #fff; }
+
+        .stick-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px; color: #cbd5e1; }
+
+        .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+        .stat { background: #2d2d44; padding: 8px 4px; border-radius: 6px; text-align: center; }
+        .stat-value { font-size: 16px; font-weight: 700; color: #fff; }
+        .stat-label { font-size: 9px; color: #888; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+<h1>⚡ Fast Slot Booker v8</h1>
+<div class="subtitle">New booking · change an existing booking to an earlier date</div>
+
+<div class="context">
+    <div class="ctx-row">
+        <span class="ctx-label">Page</span>
+        <span class="ctx-value" id="ctxPage">—</span>
+    </div>
+    <div class="ctx-row">
+        <span class="ctx-label">Centre</span>
+        <span class="ctx-value" id="ctxCentre">—</span>
+    </div>
+    <div class="ctx-row">
+        <span class="ctx-label">Last results</span>
+        <span class="ctx-value" id="ctxResults">—</span>
+    </div>
+    <div class="ctx-row">
+        <span class="ctx-label">Page loads</span>
+        <span class="ctx-value" id="ctxLoads">—</span>
+    </div>
+</div>
+
+<div id="status" class="status idle">Ready</div>
+<div id="next" class="next"></div>
+<div id="message" class="message"></div>
+
+<div class="btn-row">
+    <button id="startBtn" class="btn-start">▶ START</button>
+    <button id="pauseBtn" class="btn-pause" style="display:none;">⏸ PAUSE</button>
+    <button id="stopBtn" class="btn-stop" disabled>⬛ STOP</button>
+</div>
+<div class="hint warn" id="cooldownHint" hidden></div>
+
+<div class="section">
+    <h3>🔎 Centre search</h3>
+    <div class="field">
+        <label for="searchTerm">Postcode or centre name</label>
+        <input type="text" id="searchTerm" class="input" placeholder="e.g. cardigan or RM1">
+    </div>
+    <div class="field">
+        <label for="allowList">Only these centres (optional, comma-separated)</label>
+        <input type="text" id="allowList" class="input" placeholder="e.g. Goodmayes, Wanstead">
+    </div>
+    <div class="stick-row">
+        <label class="toggle-label">
+            <input type="checkbox" id="stickToCentre" class="toggle-input">
+            <span class="toggle-slider"></span>
+        </label>
+        <span>📌 Stick to one centre</span>
+    </div>
+    <div class="hint" id="stickHint">Off — tries the centres near yours too, when yours has no tests</div>
+    <div class="hint">Leave the term empty to use what's typed in the sik search box.</div>
+</div>
+
+<div class="section">
+    <h3>🔁 Change existing booking</h3>
+    <div class="speed-modes change-modes">
+        <button class="speed-btn change-btn" data-change="date">Same centre</button>
+        <button class="speed-btn change-btn" data-change="centre">Nearby centres</button>
+    </div>
+    <div class="field" id="manageCentresField" style="margin-top:8px;" hidden>
+        <label for="manageCentres">Nearby centres to check (optional, comma-separated)</label>
+        <input type="text" id="manageCentres" class="input" placeholder="e.g. Goodmayes, Wanstead — empty checks all">
+    </div>
+    <div class="hint" id="changeHint">Searches your centre again from the Test date page and only takes a slot earlier than your current test. Start on View booking; you confirm the change in the tab.</div>
+</div>
+
+<div class="section">
+    <h3>
+        <label class="toggle-label">
+            <input type="checkbox" id="filterEnabled" class="toggle-input">
+            <span class="toggle-slider"></span>
+        </label>
+        🎯 Date range
+    </h3>
+    <div class="grid-2" id="filterInputs">
+        <div class="field">
+            <label for="earliestISO">Earliest date</label>
+            <input type="date" id="earliestISO" class="input">
+        </div>
+        <div class="field">
+            <label for="latestISO">Latest date</label>
+            <input type="date" id="latestISO" class="input">
+        </div>
+        <div class="field">
+            <label for="earliestTime">Earliest time</label>
+            <input type="time" id="earliestTime" class="input">
+        </div>
+        <div class="field">
+            <label for="latestTime">Latest time</label>
+            <input type="time" id="latestTime" class="input">
+        </div>
+    </div>
+    <div class="hint" id="filterHint">Off — books the earliest available slot. Enter a date to turn it on.</div>
+</div>
+
+<div class="section">
+    <h3>🚀 Refresh speed</h3>
+    <div class="speed-modes">
+        <button class="speed-btn safe" data-mode="safe">Safe</button>
+        <button class="speed-btn normal" data-mode="normal">Normal</button>
+        <button class="speed-btn fast" data-mode="fast">Fast</button>
+        <button class="speed-btn ultra" data-mode="ultra">Ultra</button>
+        <button class="speed-btn custom" data-mode="custom">Custom</button>
+    </div>
+    <div class="custom-refresh" id="customRefresh" hidden>
+        <span>Wait</span>
+        <input type="number" id="customMin" class="input" min="0" max="600000" step="50" placeholder="1000" aria-label="Minimum wait before each check in milliseconds">
+        <span>to</span>
+        <input type="number" id="customMax" class="input" min="0" max="600000" step="50" placeholder="same" aria-label="Maximum wait before each check in milliseconds (optional)">
+        <span>ms</span>
+    </div>
+    <div class="hint" id="speedHint">Refresh every 8–15s</div>
+</div>
+
+<div class="stats">
+    <div class="stat">
+        <div class="stat-value" id="refreshValue">0</div>
+        <div class="stat-label">Refreshes</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value" id="slotsValue">—</div>
+        <div class="stat-label">Slots seen</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value" id="elapsedValue">—</div>
+        <div class="stat-label">Elapsed</div>
+    </div>
+</div>
+
+<button id="resetBtn" class="btn-reset" style="width:100%;">Clear last run</button>
+
+<script src="popup.js"></script>
+</body>
+</html>
